@@ -18,7 +18,8 @@ import {
   Copy,
   Send,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  History
 } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
@@ -38,6 +39,14 @@ interface Lead {
   nextAction: string;
   companyInfo: string;
   signals: string[];
+}
+
+interface Activity {
+  id: string;
+  type: "email_sent" | "reply_received" | "reply_none" | "followup_created" | "ai_response_generated";
+  message: string;
+  timestamp: Date;
+  details?: string;
 }
 
 const mockLeads: Record<string, Lead> = {
@@ -84,6 +93,22 @@ const statusConfig = {
   paused: { label: "Paused", color: "bg-gray-400" },
 };
 
+const activityIcons = {
+  email_sent: Mail,
+  reply_received: MessageSquare,
+  reply_none: Clock,
+  followup_created: Send,
+  ai_response_generated: Sparkles,
+};
+
+const activityColors = {
+  email_sent: "text-blue-500",
+  reply_received: "text-green-500",
+  reply_none: "text-yellow-500",
+  followup_created: "text-purple-500",
+  ai_response_generated: "text-pink-500",
+};
+
 export default function LeadDetail() {
   const [, params] = useRoute("/leads/:id");
   const [, setLocation] = useLocation();
@@ -108,15 +133,29 @@ export default function LeadDetail() {
   const [prospectReply, setProspectReply] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [followUpSuggestion, setFollowUpSuggestion] = useState("");
+  const [activities, setActivities] = useState<Activity[]>([]);
+
+  const addActivity = (type: Activity["type"], message: string, details?: string) => {
+    const newActivity: Activity = {
+      id: Date.now().toString(),
+      type,
+      message,
+      timestamp: new Date(),
+      details,
+    };
+    setActivities(prev => [newActivity, ...prev]);
+  };
 
   const handleMarkCompleted = () => {
     setEmailSent(true);
     setWaitingForReply(true);
+    addActivity("email_sent", "Email marked as sent", emailDraft);
   };
 
   const handleReplyYes = () => {
     setReceivedReply(true);
     setWaitingForReply(false);
+    addActivity("reply_received", "Prospect replied to email");
   };
 
   const handleReplyNo = () => {
@@ -126,6 +165,7 @@ export default function LeadDetail() {
     const followUp = `Hi ${lead.name.split(" ")[0]},\n\nI wanted to follow up on my previous email about helping ${lead.company} scale personalized outreach.\n\nI know timing isn't always perfect, so I thought I'd share a quick resource that might be valuable: [Case study link showing 40% pipeline increase]\n\nIf you have 2 minutes this week, I'd love to hear your thoughts on your current outreach challenges. No pressure - just want to make sure this lands on your radar.\n\nWould a brief call next Tuesday or Wednesday work?\n\nBest,\nYour SDR Team`;
     
     setFollowUpSuggestion(followUp);
+    addActivity("reply_none", "No reply received - follow-up created", followUp);
   };
 
   const handleGenerateResponse = () => {
@@ -137,6 +177,22 @@ export default function LeadDetail() {
     }\n\nWhat do you think?\n\nBest,\nYour SDR Team`;
     
     setAiResponse(suggestion);
+    addActivity("ai_response_generated", "AI generated response based on prospect reply", suggestion);
+  };
+
+  const formatTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   };
 
   const statusInfo = statusConfig[lead.status];
@@ -270,6 +326,51 @@ export default function LeadDetail() {
           </Card>
         </div>
 
+        {activities.length > 0 && (
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Activity History</h2>
+            </div>
+            <div className="space-y-4" data-testid="activity-timeline">
+              {activities.map((activity, index) => {
+                const Icon = activityIcons[activity.type];
+                const colorClass = activityColors[activity.type];
+                
+                return (
+                  <div 
+                    key={activity.id} 
+                    className="flex gap-4"
+                    data-testid={`activity-${activity.id}`}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className={`h-10 w-10 rounded-full bg-muted flex items-center justify-center ${colorClass}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      {index < activities.length - 1 && (
+                        <div className="w-0.5 h-full bg-border mt-2" />
+                      )}
+                    </div>
+                    <div className="flex-1 pb-6">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium">{activity.message}</p>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(activity.timestamp)}
+                        </span>
+                      </div>
+                      {activity.details && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {activity.details}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Next Action Steps</h2>
           
@@ -294,26 +395,16 @@ export default function LeadDetail() {
                 <>
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Email Draft</h3>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigator.clipboard.writeText(emailDraft)}
-                        className="gap-2"
-                        data-testid="button-copy-email"
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copy
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="gap-2"
-                        data-testid="button-send-email"
-                      >
-                        <Send className="h-4 w-4" />
-                        Send Email
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(emailDraft)}
+                      className="gap-2"
+                      data-testid="button-copy-email"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </Button>
                   </div>
                   <Textarea
                     value={emailDraft}
@@ -467,13 +558,6 @@ export default function LeadDetail() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button
-                      className="gap-2"
-                      data-testid="button-send-followup"
-                    >
-                      <Send className="h-4 w-4" />
-                      Send Follow-Up
-                    </Button>
                     <Button
                       variant="outline"
                       onClick={() => {
