@@ -3,14 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, X, Upload, Check } from "lucide-react";
+import { Plus, X, Upload, FileText } from "lucide-react";
 import { useState } from "react";
 
 interface Step2Data {
   primaryWebsite: string;
   keyUrls: { label: string; url: string }[];
-  documentSources: { type: string; value: string }[];
-  thirdPartySignals: string[];
+  uploadedDocuments: File[];
 }
 
 interface Step2Props {
@@ -19,7 +18,6 @@ interface Step2Props {
 }
 
 const urlTemplates = ["About", "Product", "Pricing", "Blog", "Careers", "Press/News", "Docs"];
-const signalOptions = ["Funding Database", "Jobs Feed", "Website Intent Tracking"];
 
 export function Step2DataSources({ data, onChange }: Step2Props) {
   const [newUrlLabel, setNewUrlLabel] = useState("");
@@ -43,11 +41,19 @@ export function Step2DataSources({ data, onChange }: Step2Props) {
     });
   };
 
-  const toggleSignal = (signal: string) => {
-    const newSignals = data.thirdPartySignals.includes(signal)
-      ? data.thirdPartySignals.filter((s) => s !== signal)
-      : [...data.thirdPartySignals, signal];
-    onChange({ ...data, thirdPartySignals: newSignals });
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    onChange({
+      ...data,
+      uploadedDocuments: [...data.uploadedDocuments, ...files],
+    });
+  };
+
+  const removeDocument = (index: number) => {
+    onChange({
+      ...data,
+      uploadedDocuments: data.uploadedDocuments.filter((_, i) => i !== index),
+    });
   };
 
   return (
@@ -140,54 +146,62 @@ export function Step2DataSources({ data, onChange }: Step2Props) {
       </Card>
 
       <Card className="p-6">
-        <h3 className="font-semibold mb-4">Document Sources (Optional)</h3>
+        <h3 className="font-semibold mb-4">
+          Upload Documents <span className="text-destructive">*</span>
+        </h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Upload or link to additional context documents
+          Upload product docs, case studies, pitch decks, or other materials that explain your offering
         </p>
 
-        <div className="space-y-3">
-          <div className="border-2 border-dashed rounded-lg p-6 text-center hover-elevate cursor-pointer">
-            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-sm font-medium">Upload Folder</p>
-            <p className="text-xs text-muted-foreground">Drag and drop or click to browse</p>
-          </div>
-
-          <Input
-            placeholder="Cloud Drive Link (Google Drive, Dropbox, etc.)"
-            data-testid="input-cloud-drive"
-          />
-
-          <Input
-            placeholder="Knowledge Base URL"
-            data-testid="input-knowledge-base"
-          />
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">Third-Party Signals (Optional)</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Connect external data sources for better targeting
-        </p>
-
-        <div className="space-y-2">
-          {signalOptions.map((signal) => (
-            <div
-              key={signal}
-              className="flex items-center justify-between p-3 border rounded-lg hover-elevate cursor-pointer"
-              onClick={() => toggleSignal(signal)}
-            >
-              <span className="text-sm">{signal}</span>
-              {data.thirdPartySignals.includes(signal) ? (
-                <Badge variant="default" className="gap-1">
-                  <Check className="h-3 w-3" />
-                  Connected
-                </Badge>
-              ) : (
-                <Badge variant="outline">Skipped</Badge>
-              )}
+        <div className="space-y-4">
+          <label className="block">
+            <div className="border-2 border-dashed rounded-lg p-8 text-center hover-elevate cursor-pointer">
+              <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <p className="font-medium mb-1">Click to upload documents</p>
+              <p className="text-sm text-muted-foreground mb-3">
+                or drag and drop files here
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Supported formats: PDF, DOCX, TXT, MD
+              </p>
             </div>
-          ))}
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.txt,.md"
+              className="hidden"
+              onChange={handleFileUpload}
+              data-testid="input-document-upload"
+            />
+          </label>
+
+          {data.uploadedDocuments.length > 0 && (
+            <div className="space-y-2">
+              <Label>Uploaded Documents ({data.uploadedDocuments.length})</Label>
+              {data.uploadedDocuments.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{file.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({(file.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => removeDocument(index)}
+                    data-testid={`button-remove-doc-${index}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </Card>
     </div>

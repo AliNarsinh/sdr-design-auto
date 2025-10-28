@@ -26,8 +26,7 @@ export default function Setup() {
   const [step2Data, setStep2Data] = useState({
     primaryWebsite: "",
     keyUrls: [] as { label: string; url: string }[],
-    documentSources: [] as { type: string; value: string }[],
-    thirdPartySignals: [] as string[],
+    uploadedDocuments: [] as File[],
   });
 
   const [step3Data, setStep3Data] = useState({
@@ -35,10 +34,10 @@ export default function Setup() {
       {
         id: "1",
         name: "ICP 1",
-        industries: [] as string[],
-        sizeBands: [] as string[],
-        geographies: [] as string[],
-        techStack: [] as string[],
+        industries: "",
+        companySize: "",
+        geographies: "",
+        techStack: "",
         triggerSignals: [] as string[],
         disqualifiers: [] as string[],
       },
@@ -46,8 +45,7 @@ export default function Setup() {
   });
 
   const [step4Data, setStep4Data] = useState({
-    uploadMethod: "paste" as "csv" | "paste",
-    pastedData: "",
+    uploadedFile: null as File | null,
     assignedSequence: "",
     uploadedLeads: [] as any[],
   });
@@ -62,14 +60,14 @@ export default function Setup() {
       case 1:
         return step1Data.projectName.trim() !== "" && step1Data.companyDescription.trim() !== "";
       case 2:
-        return step2Data.primaryWebsite.trim() !== "";
+        return step2Data.primaryWebsite.trim() !== "" && step2Data.uploadedDocuments.length > 0;
       case 3:
         return step3Data.icps.some(
           (icp) =>
             icp.name.trim() !== "" &&
-            icp.industries.length > 0 &&
-            icp.sizeBands.length > 0 &&
-            icp.geographies.length > 0
+            icp.industries.trim() !== "" &&
+            icp.companySize.trim() !== "" &&
+            icp.geographies.trim() !== ""
         );
       case 4:
         return true;

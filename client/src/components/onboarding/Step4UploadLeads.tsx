@@ -1,10 +1,8 @@
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Upload, CheckCircle, AlertCircle, Clock } from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, Clock, Download } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,8 +12,7 @@ import {
 } from "@/components/ui/select";
 
 interface Step4Data {
-  uploadMethod: "csv" | "paste";
-  pastedData: string;
+  uploadedFile: File | null;
   assignedSequence: string;
   uploadedLeads: any[];
 }
@@ -35,21 +32,36 @@ const statusConfig = {
 };
 
 export function Step4UploadLeads({ data, icps, onChange }: Step4Props) {
-  const parseLeads = () => {
-    const lines = data.pastedData.trim().split("\n");
-    const leads = lines
-      .filter((line) => line.trim())
-      .map((line, index) => {
-        const parts = line.split(",").map((p) => p.trim());
-        return {
-          id: index + 1,
-          name: parts[0] || "",
-          email: parts[1] || "",
-          company: parts[2] || "",
-          status: Math.random() > 0.8 ? "error" : Math.random() > 0.5 ? "ready" : "researching",
-        };
-      });
-    onChange({ ...data, uploadedLeads: leads });
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onChange({ ...data, uploadedFile: file });
+      
+      const mockLeads = Array.from({ length: 25 }, (_, i) => ({
+        id: i + 1,
+        name: `Lead ${i + 1}`,
+        email: `lead${i + 1}@company.com`,
+        company: `Company ${i + 1}`,
+        status: Math.random() > 0.8 ? "error" : Math.random() > 0.5 ? "ready" : "researching",
+      }));
+      onChange({ ...data, uploadedFile: file, uploadedLeads: mockLeads });
+    }
+  };
+
+  const downloadTemplate = () => {
+    const csvContent = 
+      "First Name,Last Name,Email,Company,Title,LinkedIn URL\n" +
+      "Sarah,Johnson,sarah.johnson@acmecorp.com,Acme Corp,VP of Sales,https://linkedin.com/in/sarahjohnson\n" +
+      "Michael,Chen,michael.chen@techstart.io,TechStart Inc,Head of Revenue,https://linkedin.com/in/michaelchen\n" +
+      "Emily,Rodriguez,emily@growth.co,Growth Co,Director of Marketing,https://linkedin.com/in/emilyrodriguez";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lead_import_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const stats = {
@@ -62,58 +74,63 @@ export function Step4UploadLeads({ data, icps, onChange }: Step4Props) {
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <h3 className="font-semibold mb-4">Import Leads</h3>
+        <h3 className="font-semibold mb-4">Import Leads via CSV</h3>
         
-        <div className="flex gap-2 mb-4">
-          <Button
-            variant={data.uploadMethod === "csv" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onChange({ ...data, uploadMethod: "csv" })}
-            data-testid="button-method-csv"
-          >
-            Upload CSV
-          </Button>
-          <Button
-            variant={data.uploadMethod === "paste" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onChange({ ...data, uploadMethod: "paste" })}
-            data-testid="button-method-paste"
-          >
-            Paste Data
-          </Button>
-        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-accent/30 rounded-lg">
+            <div>
+              <p className="font-medium text-sm">Download CSV Template</p>
+              <p className="text-xs text-muted-foreground">
+                See the required format with example data
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadTemplate}
+              className="gap-2"
+              data-testid="button-download-template"
+            >
+              <Download className="h-4 w-4" />
+              Download Template
+            </Button>
+          </div>
 
-        {data.uploadMethod === "csv" ? (
-          <div className="border-2 border-dashed rounded-lg p-8 text-center hover-elevate cursor-pointer">
-            <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-            <p className="font-medium mb-1">Click to upload CSV</p>
-            <p className="text-sm text-muted-foreground mb-3">
-              or drag and drop your file here
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Format: Name, Email, Company, Title (optional)
-            </p>
+          <label className="block">
+            <div className="border-2 border-dashed rounded-lg p-8 text-center hover-elevate cursor-pointer">
+              <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <p className="font-medium mb-1">Click to upload CSV</p>
+              <p className="text-sm text-muted-foreground mb-3">
+                or drag and drop your file here
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Required columns: First Name, Last Name, Email, Company
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Optional: Title, LinkedIn URL
+              </p>
+            </div>
             <input
               type="file"
               accept=".csv"
               className="hidden"
+              onChange={handleFileUpload}
               data-testid="input-csv-file"
             />
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <Textarea
-              placeholder="Paste contacts (format: Name, Email, Company)&#10;Example:&#10;Sarah Johnson, sarah@acme.com, Acme Corp&#10;Michael Chen, m.chen@techstart.io, TechStart Inc"
-              value={data.pastedData}
-              onChange={(e) => onChange({ ...data, pastedData: e.target.value })}
-              className="min-h-[150px] font-mono text-xs"
-              data-testid="textarea-paste-leads"
-            />
-            <Button onClick={parseLeads} size="sm" data-testid="button-parse-leads">
-              Parse & Preview
-            </Button>
-          </div>
-        )}
+          </label>
+
+          {data.uploadedFile && (
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-green-50 dark:bg-green-950">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">{data.uploadedFile.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({(data.uploadedFile.size / 1024).toFixed(1)} KB)
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </Card>
 
       {icps.length > 0 && (
