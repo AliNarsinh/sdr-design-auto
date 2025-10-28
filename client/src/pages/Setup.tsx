@@ -1,20 +1,55 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { Upload, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { useLocation } from "wouter";
+import { Step1ProjectDetails } from "@/components/onboarding/Step1ProjectDetails";
+import { Step2DataSources } from "@/components/onboarding/Step2DataSources";
+import { Step3ICPs } from "@/components/onboarding/Step3ICPs";
+import { Step4UploadLeads } from "@/components/onboarding/Step4UploadLeads";
+import { Step5Review } from "@/components/onboarding/Step5Review";
 
 export default function Setup() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
-  const [icpData, setIcpData] = useState({
-    industries: "",
-    headcount: "",
-    geographies: "",
-    keywords: "",
+
+  const [step1Data, setStep1Data] = useState({
+    projectName: "",
+    companyDescription: "",
+    valueProposition: [] as string[],
+    geographies: [] as string[],
+    personas: [] as string[],
+    approveBeforeSend: true,
+    linkedinManual: true,
+  });
+
+  const [step2Data, setStep2Data] = useState({
+    primaryWebsite: "",
+    keyUrls: [] as { label: string; url: string }[],
+    documentSources: [] as { type: string; value: string }[],
+    thirdPartySignals: [] as string[],
+  });
+
+  const [step3Data, setStep3Data] = useState({
+    icps: [
+      {
+        id: "1",
+        name: "ICP 1",
+        industries: [] as string[],
+        sizeBands: [] as string[],
+        geographies: [] as string[],
+        techStack: [] as string[],
+        triggerSignals: [] as string[],
+        disqualifiers: [] as string[],
+      },
+    ],
+  });
+
+  const [step4Data, setStep4Data] = useState({
+    uploadMethod: "paste" as "csv" | "paste",
+    pastedData: "",
+    assignedSequence: "",
+    uploadedLeads: [] as any[],
   });
 
   const handleComplete = () => {
@@ -22,21 +57,50 @@ export default function Setup() {
     setLocation("/");
   };
 
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1:
+        return step1Data.projectName.trim() !== "" && step1Data.companyDescription.trim() !== "";
+      case 2:
+        return step2Data.primaryWebsite.trim() !== "";
+      case 3:
+        return step3Data.icps.some(
+          (icp) =>
+            icp.name.trim() !== "" &&
+            icp.industries.length > 0 &&
+            icp.sizeBands.length > 0 &&
+            icp.geographies.length > 0
+        );
+      case 4:
+        return true;
+      case 5:
+        return true;
+      default:
+        return false;
+    }
+  };
+
   const steps = [
-    { number: 1, label: "Company Data" },
-    { number: 2, label: "ICP Profile" },
-    { number: 3, label: "Target List" },
+    { number: 1, label: "Project Details" },
+    { number: 2, label: "Data Sources" },
+    { number: 3, label: "ICPs" },
+    { number: 4, label: "Upload Leads" },
+    { number: 5, label: "Review & Start" },
   ];
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background p-6 overflow-auto">
+      <div className="max-w-5xl mx-auto space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">
             Setup Your SDR Copilot
           </h1>
           <p className="text-muted-foreground">
-            Define your ideal customer profile to get started
+            {currentStep === 1 && "Let's start by understanding your project"}
+            {currentStep === 2 && "Connect your data sources"}
+            {currentStep === 3 && "Define your ideal customer profiles"}
+            {currentStep === 4 && "Import your initial lead list"}
+            {currentStep === 5 && "Review and finalize your setup"}
           </p>
         </div>
 
@@ -51,16 +115,16 @@ export default function Setup() {
                 }`}
               >
                 <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center border-2 ${
+                  className={`h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all ${
                     currentStep > step.number
                       ? "bg-primary border-primary text-primary-foreground"
                       : currentStep === step.number
-                      ? "border-primary"
-                      : "border-muted"
+                      ? "border-primary bg-primary/10"
+                      : "border-muted bg-background"
                   }`}
                 >
                   {currentStep > step.number ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-5 w-5" />
                   ) : (
                     step.number
                   )}
@@ -71,7 +135,7 @@ export default function Setup() {
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`h-0.5 w-12 mx-2 ${
+                  className={`h-0.5 w-12 mx-2 transition-all ${
                     currentStep > step.number ? "bg-primary" : "bg-muted"
                   }`}
                 />
@@ -80,216 +144,81 @@ export default function Setup() {
           ))}
         </div>
 
-        {currentStep === 1 && (
-          <Card className="p-6 space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold mb-4">Add Company Data</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Import your initial company list to get started
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="border-2 border-dashed rounded-lg p-8 text-center hover-elevate cursor-pointer">
-                <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-sm font-medium mb-1">Import CSV</p>
-                <p className="text-xs text-muted-foreground">
-                  Click to upload or drag and drop
-                </p>
-                <input
-                  type="file"
-                  accept=".csv"
-                  className="hidden"
-                  data-testid="input-csv-upload"
-                />
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or
-                  </span>
-                </div>
-              </div>
-
-              <Textarea
-                placeholder="Paste company list (one per line)&#10;Example:&#10;Acme Corp, acme.com&#10;TechStart Inc, techstart.io"
-                className="min-h-[120px]"
-                data-testid="textarea-company-list"
-              />
-
-              <div className="bg-muted p-4 rounded-md text-sm">
-                <p className="font-medium mb-2">Required fields:</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                  <li>Company name</li>
-                  <li>Domain</li>
-                </ul>
-                <p className="font-medium mt-3 mb-2">Optional fields:</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                  <li>Industry</li>
-                  <li>Headcount</li>
-                  <li>Geography</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {currentStep === 2 && (
-          <Card className="p-6 space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold mb-4">
-                Define Your ICP (Ideal Customer Profile)
-              </h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Help us understand who you're targeting
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Industries</label>
-                <Input
-                  placeholder="e.g., SaaS, FinTech, E-commerce"
-                  value={icpData.industries}
-                  onChange={(e) =>
-                    setIcpData({ ...icpData, industries: e.target.value })
-                  }
-                  data-testid="input-industries"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Headcount Bands</label>
-                <Input
-                  placeholder="e.g., 50-200, 200-500"
-                  value={icpData.headcount}
-                  onChange={(e) =>
-                    setIcpData({ ...icpData, headcount: e.target.value })
-                  }
-                  data-testid="input-headcount"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Geographies</label>
-                <Input
-                  placeholder="e.g., North America, Europe, APAC"
-                  value={icpData.geographies}
-                  onChange={(e) =>
-                    setIcpData({ ...icpData, geographies: e.target.value })
-                  }
-                  data-testid="input-geographies"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Keywords (Roles, Pain Points)
-                </label>
-                <Textarea
-                  placeholder="e.g., VP Sales, Head of Operations, scaling challenges, sales automation"
-                  value={icpData.keywords}
-                  onChange={(e) =>
-                    setIcpData({ ...icpData, keywords: e.target.value })
-                  }
-                  className="min-h-[100px]"
-                  data-testid="textarea-keywords"
-                />
-              </div>
-
-              <div className="bg-primary/10 border border-primary/20 p-4 rounded-md">
-                <h3 className="text-sm font-medium mb-2">ICP Score Formula</h3>
-                <p className="text-xs text-muted-foreground">
-                  We calculate ICP scores based on industry match (30%), company
-                  size fit (25%), geography match (20%), tech stack alignment
-                  (15%), and keyword relevance (10%). Scores of 70+ indicate
-                  strong ICP fit.
-                </p>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {currentStep === 3 && (
-          <Card className="p-6 space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold mb-4">
-                Initial Target List
-              </h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Add your starting contacts and assign sequences
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Textarea
-                placeholder="Paste contacts (format: Name, Email, Company)&#10;Example:&#10;Sarah Johnson, sarah@acme.com, Acme Corp&#10;Michael Chen, m.chen@techstart.io, TechStart Inc"
-                className="min-h-[150px]"
-                data-testid="textarea-contact-list"
-              />
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Assign to Sequence (Optional)
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  <Badge variant="outline" className="cursor-pointer hover-elevate">
-                    High-Intent Outreach
-                  </Badge>
-                  <Badge variant="outline" className="cursor-pointer hover-elevate">
-                    Hiring Hook Sequence
-                  </Badge>
-                  <Badge variant="outline" className="cursor-pointer hover-elevate">
-                    Funding Announcement
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="bg-muted p-4 rounded-md">
-                <p className="text-sm font-medium mb-2">Preview</p>
-                <div className="space-y-2 text-xs text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span>Total contacts to import:</span>
-                    <span className="font-semibold">0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>With ICP score ≥70:</span>
-                    <span className="font-semibold">0</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
+        <Card className="p-8">
+          {currentStep === 1 && (
+            <Step1ProjectDetails data={step1Data} onChange={setStep1Data} />
+          )}
+          {currentStep === 2 && (
+            <Step2DataSources data={step2Data} onChange={setStep2Data} />
+          )}
+          {currentStep === 3 && (
+            <Step3ICPs data={step3Data} onChange={setStep3Data} />
+          )}
+          {currentStep === 4 && (
+            <Step4UploadLeads
+              data={step4Data}
+              icps={step3Data.icps}
+              onChange={setStep4Data}
+            />
+          )}
+          {currentStep === 5 && (
+            <Step5Review
+              projectData={step1Data}
+              dataSourcesData={step2Data}
+              icpsData={step3Data}
+              leadsData={step4Data}
+            />
+          )}
+        </Card>
 
         <div className="flex gap-3 justify-between">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-            disabled={currentStep === 1}
-            data-testid="button-back"
-          >
-            Back
-          </Button>
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+              disabled={currentStep === 1}
+              data-testid="button-back"
+            >
+              Back
+            </Button>
+          </div>
 
           <div className="flex gap-3">
-            {currentStep < 3 ? (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                console.log("Saving progress...");
+              }}
+              data-testid="button-save-exit"
+            >
+              Save & Exit
+            </Button>
+
+            {currentStep < 5 ? (
               <Button
                 onClick={() => setCurrentStep(currentStep + 1)}
+                disabled={!canProceed()}
                 data-testid="button-next"
               >
                 Next
               </Button>
             ) : (
-              <Button onClick={handleComplete} data-testid="button-complete">
-                Save & Start
+              <Button
+                onClick={handleComplete}
+                size="lg"
+                className="px-8"
+                data-testid="button-complete"
+              >
+                Start Prioritizing Leads
               </Button>
             )}
           </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">
+            Step {currentStep} of 5 • Progress saved automatically
+          </p>
         </div>
       </div>
     </div>

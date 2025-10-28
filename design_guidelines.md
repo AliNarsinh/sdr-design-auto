@@ -2,15 +2,16 @@
 
 ## Design Approach
 
-**Selected System**: Linear-inspired Design with enterprise productivity focus
+**Selected System**: Insight Scope-inspired Design with friendly, approachable aesthetics
 
-**Justification**: This is a utility-focused, data-intensive productivity application requiring efficiency, clarity, and fast navigation across hundreds of leads. Linear's design philosophy perfectly balances modern aesthetics with functional density—essential for SDR workflows where users need to process information quickly and take action decisively.
+**Justification**: This is a productivity application for SDRs that balances efficiency with a welcoming, user-friendly interface. The soft color palette with purple/lavender accents creates an approachable feel while maintaining professional credibility. Generous spacing and rounded corners reduce visual fatigue during extended work sessions.
 
 **Core Principles**:
-- Information density over visual fluff
-- Clear hierarchy for rapid scanning
-- Minimal friction between thought and action
-- Systematic consistency across all interfaces
+- Soft, friendly aesthetics that reduce stress
+- Clear hierarchy with generous spacing
+- Rounded corners and smooth transitions
+- Welcoming pastel color palette
+- Professional yet approachable
 
 ---
 

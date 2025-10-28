@@ -45,9 +45,9 @@ export function AlertItem({
   const Icon = config.icon;
 
   return (
-    <button
+    <div
       onClick={onClick}
-      className="w-full text-left p-4 border-b hover-elevate"
+      className="w-full text-left p-4 border-b hover-elevate cursor-pointer"
       data-testid={testId}
     >
       <div className="flex items-start justify-between gap-4">
@@ -84,6 +84,6 @@ export function AlertItem({
           Import to Leads
         </Button>
       </div>
-    </button>
+    </div>
   );
 }

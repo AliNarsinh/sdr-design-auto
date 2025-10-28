@@ -1,0 +1,206 @@
+# Onboarding Flow Screens — SDR Copilot (Step‑by‑Step)
+
+**Objective:** Create a guided onboarding wizard that collects project context, connects data sources, defines one or more ICPs, ingests an initial lead list, and then automatically prioritizes leads into *Researching* vs *Ready to Push* in **Your Leads**.
+
+---
+
+## Flow Overview (Stepper)
+
+1. **Welcome & Project Details**
+2. **Company URLs & Data Sources**
+3. **ICPs (Single or Multiple)**
+4. **Upload Initial ICP Lead List**
+5. **Review & Start**
+6. **Post‑Onboarding Transition → Your Leads (Prioritized)**
+
+Each step shows: title, short description, progress (e.g., 1/5), Back/Next buttons, and Save & Exit.
+
+---
+
+## Step 1 — Welcome & Project Details
+
+**Goal:** Capture the project’s purpose and context.
+
+**Fields:**
+
+* *Project Name* (text)
+* *What does your company do?* (textarea, 2–4 sentences)
+* *Primary Value Proposition / Outcomes* (chips or textarea)
+* *Primary Geography* (multi‑select)
+* *Target Personas* (multi‑select; e.g., VP Sales, RevOps, CTO)
+* *Compliance Preferences* (checkboxes: approve‑before‑first‑send, opt‑out policy, LinkedIn manual only)
+
+**UX Notes:**
+
+* Right panel with live preview card *“This is how we’ll present you in emails”*.
+* Validation: require *Project Name* and *What does your company do?*
+
+**Edge Cases:**
+
+* If no personas selected, allow free‑text persona notes.
+
+---
+
+## Step 2 — Company URLs & Data Sources
+
+**Goal:** Provide official sources for research; optionally connect document folders.
+
+**Fields:**
+
+* *Primary Website URL* (required)
+* *Key URLs* (repeatable): About, Product, Pricing, Blog, Careers, Press/News, Docs/Integrations
+* *Document Sources* (choose any):
+
+  * Upload Folder (drag‑and‑drop)
+  * Cloud Drive link (paste URL)
+  * Knowledge base link
+* *Third‑Party Signals* (optional toggles): Funding DB, Jobs feed, Website intent provider
+
+**Behavior:**
+
+* Show status badges: Connected / Pending / Skipped.
+* Warn if Pricing or Careers URL missing (helps intent/hiring signals).
+
+**Edge Cases:**
+
+* For external links, validate reachable domain; allow skip with reason.
+
+---
+
+## Step 3 — ICPs (Single or Multiple)
+
+**Goal:** Define one or more ICPs the system will score against.
+
+**Layout:** Tabs or vertically stacked *ICP Cards* with **Add ICP** button.
+
+**Per ICP Fields:**
+
+* *ICP Name* (e.g., “Mid‑Market SaaS US”, “EMEA Fintech 200–1000”)
+* *Industries* (multi‑select)
+* *Company Size Bands* (checkboxes: 1–50, 51–200, 201–1000, 1000+)
+* *Geographies* (multi‑select)
+* *Tech Stack Signals* (checkboxes: CRM: HubSpot/SFDC; Data: Snowflake; etc.)
+* *Trigger Signals* (chips): hiring keywords, funding stages, product launches
+* *Disqualifiers* (chips): agencies, competitors, student orgs, free‑only
+
+**Sidebar:** *ICP Scoring Formula Preview*
+
+* +30 industry match, +20 size band, +15 geo, +10 CRM presence, +10 trigger signal last 60 days, −15 low activity
+
+**Bulk Actions:** Duplicate ICP, Archive ICP.
+
+**Edge Cases:**
+
+* Require: ICP Name + at least 1 industry + 1 size band + 1 geo.
+
+---
+
+## Step 4 — Upload Initial ICP Lead List
+
+**Goal:** Seed the system with target accounts/contacts that match the ICPs.
+
+**Inputs:**
+
+* *Upload CSV* or *Paste Table* (Company, Domain, Contact Name, Title, Email, LinkedIn, Phone, Assigned ICP)
+* *Map Columns* step with auto‑detect; remember mapping for future uploads
+* *Assign ICP* (dropdown per row if not provided)
+* *Assign Sequence* (optional now, or later in Sequences)
+
+**Validation & Preview:**
+
+* Show counts: New Companies / Updated / Duplicates / Invalids
+* Highlight rows missing required fields (Company or Domain)
+
+**Post‑Upload Processing (background):**
+
+* Status badges per row: **Importing → Enriching → Researching → Ready to Push**
+* If contact emails bounce on validation, mark *Needs Fix* and exclude from Ready list
+
+**Edge Cases:**
+
+* Duplicate detection by domain + contact email; offer merge.
+
+---
+
+## Step 5 — Review & Start
+
+**Goal:** Confirm setup and explain what happens next.
+
+**Summary Cards:**
+
+* Project Overview (from Step 1)
+* Data Sources connected (from Step 2)
+* ICPs defined (list with counts)
+* Leads uploaded (numbers per ICP)
+* Default Sequence selection (optional)
+
+**Start Button:** **Start Prioritizing Leads**
+
+* On click: route to **Your Leads** with priority sort.
+
+**Helper Copy:**
+
+* “We’ll prioritize leads and split them into *Researching* and *Ready to Push*. You can work from the *To‑Do* view immediately.”
+
+---
+
+## Post‑Onboarding — Your Leads Prioritization
+
+**Goal:** Ensure the list is usable with hundreds of leads; prioritize by readiness.
+
+**New Lead Statuses:**
+
+* **Importing** → just added
+* **Enriching** → filling gaps (domain, industry, role)
+* **Researching** → generating brief + signal hooks
+* **Ready to Push** → first email/LI/call prepared, awaiting review
+* **In Sequence** → scheduled/sending
+
+**Default Sort:**
+
+1. *Ready to Push* (soonest next action)
+2. *Researching* (closest to completion)
+3. *Needs Fix* (missing data/bounce)
+
+**Filters:** Status, ICP, Owner, Intent band, Sequence.
+
+**Batch Actions:** Approve & Send for selected *Ready to Push*; Move to Nurture; Reassign ICP.
+
+---
+
+## Acceptance Criteria
+
+1. Wizard enforces step completion; users can Save & Exit and resume at the last step.
+2. Multiple ICPs can be created/edited; scoring preview updates live.
+3. Upload accepts CSV/paste; column mapping is remembered; duplicates handled.
+4. After finishing, **Page 1** disappears; ICP/data edits move to Dashboard > Settings.
+5. **Your Leads** shows statuses with the new pipeline (*Importing → Enriching → Researching → Ready to Push → In Sequence*).
+6. Default sort surfaces *Ready to Push* first; list remains responsive with **500+ leads**.
+
+---
+
+## UXPilot Screen Prompts
+
+### Screen Prompt — Step 1: Welcome & Project Details
+
+"Design Step 1 of a 5‑step onboarding wizard titled ‘Welcome & Project Details’. Left side shows a form with fields: Project Name (required), What does your company do? (required, textarea), Value Proposition (chips), Primary Geography (multi‑select), Target Personas (multi‑select), Compliance Preferences (checkboxes). Right side shows a live preview card of how the company will be described in outreach. Include progress indicator (1/5), Back (disabled), Next, and Save & Exit. Clean, modern, card‑based layout."
+
+### Screen Prompt — Step 2: Company URLs & Data Sources
+
+"Design Step 2: ‘Company URLs & Data Sources’. Form with required Primary Website URL, repeatable Key URLs (About, Product, Pricing, Blog, Careers, Press/News, Docs/Integrations). Section for Document Sources: Upload folder (drag‑and‑drop), Cloud Drive link, Knowledge base link. Section for Third‑Party Signals with toggle chips. Each item shows a status badge (Connected/Pending/Skipped). Include (2/5) progress and Back/Next/Save & Exit buttons."
+
+### Screen Prompt — Step 3: ICPs (Multiple)
+
+"Design Step 3: ‘Define ICPs’. Display stack of ICP Cards with fields: ICP Name, Industries (multi), Company Size bands, Geographies (multi), Tech Stack signals (checkboxes), Trigger Signals (chips), Disqualifiers (chips). Include an ‘Add ICP’ button, ability to duplicate or archive an ICP. Right sidebar shows a read‑only ‘ICP Scoring Formula Preview’. Progress (3/5), Back/Next/Save & Exit."
+
+### Screen Prompt — Step 4: Upload Initial ICP Lead List
+
+"Design Step 4: ‘Upload Leads’. Provide tabs for Upload CSV and Paste Table. After upload, show a Column Mapping step with auto‑detect and editable selectors. Show a preview table with row status badges: Importing, Enriching, Researching, Ready to Push, Needs Fix. Provide Assign ICP dropdown and optional Assign Sequence. Show counts for New/Updated/Duplicates/Invalids. Progress (4/5), Back/Next/Save & Exit."
+
+### Screen Prompt — Step 5: Review & Start
+
+"Design Step 5: ‘Review & Start’. Show summary cards for Project Overview, Data Sources, ICPs, Leads uploaded, Default Sequence. CTA button: ‘Start Prioritizing Leads’. Include helper text explaining that Your Leads will be sorted into Researching vs Ready to Push. Progress (5/5), Back, Finish, Save & Exit."
+
+### Screen Prompt — Post‑Onboarding: Your Leads (Prioritized)
+
+"Design the Your Leads page that appears immediately after onboarding. Provide a status filter bar and default sort showing Ready to Push first, then Researching, then Needs Fix. Each row displays Company, Contact, ICP, Status, Next Action, Due. Include batch actions (Approve & Send, Move to Nurture, Reassign ICP). Clicking a row opens the detailed lead view with Info, Tasks, and Chat."
