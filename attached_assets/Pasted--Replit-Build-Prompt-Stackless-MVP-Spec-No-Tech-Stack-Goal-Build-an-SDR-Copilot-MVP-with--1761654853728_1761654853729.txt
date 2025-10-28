@@ -1,0 +1,231 @@
+# Replit Build Prompt — Stackless MVP Spec (No Tech Stack)
+
+**Goal:** Build an SDR Copilot MVP with 5 pages (Setup, Dashboard, Your Leads, Lead Alerts, Sequences). Keep implementation choices flexible. Focus on UX flow, data, and behavior. Avoid proposing any tech stack.
+
+---
+
+## Global Requirements
+
+* Provide a clean, simple UI with minimal clicks.
+* Support hundreds of leads with fast navigation (use pagination/infinite scroll; avoid long single lists).
+* All actions must be undoable where sensible (e.g., revert approval, un-import lead).
+* Provide global search (company/contact) and basic filters on list screens.
+* Persist user selections per session (filters, sort) and remember them next visit.
+* Include role-based views: **SDR** (do tasks) and **Manager** (see analytics, edit sequences/templates). Admin is optional.
+* Accessibility: keyboard navigation for lists; clear focus states; readable contrast.
+
+---
+
+## Page 1 — Setup (one-time ICP config)
+
+**Purpose:** Define who we target before any outreach.
+
+**Sections:**
+
+1. **Add Company Data**
+
+   * Options: import CSV, paste list, or connect CRM (optional for MVP).
+   * Validate fields: company name, domain; optional: industry, headcount, geo.
+   * Show preview table and a summary: created/updated/duplicates.
+
+2. **Explain ICP (Ideal Customer Profile)**
+
+   * Inputs: industries, headcount bands, geographies, target tech (CRM), keywords (roles, pain points).
+   * Display a live **ICP Score Formula** (read-only explanation) so users understand scoring basics.
+
+3. **Initial Target List**
+
+   * Add companies/people to start with (paste or import).
+   * Optionally map out starting sequences to use for this cohort.
+
+**CTA:** **Save & Start**
+
+* After saving, this page disappears from main nav.
+* ICP can later be edited from **Settings** inside Page 2 (Dashboard).
+
+**Edge Cases:**
+
+* Missing required ICP fields → show blocking modal with checklist.
+* Duplicate companies on import → merge or skip options.
+
+---
+
+## Page 2 — Dashboard (Home)
+
+**Purpose:** Show status, today’s to‑dos, and what’s working.
+
+**Top KPIs (last 30 days):**
+
+* Reply Rate, Meetings Booked, Bounce Rate, Active Sequences, Open Tasks Today.
+
+**To‑Dos Panel:**
+
+* Counts of required actions **today**: Emails to approve, LinkedIn tasks, Calls to make.
+* Clicking an item opens Page 3 on the relevant lead.
+
+**Sidebar (always visible):**
+
+* **Your Leads** → Page 3
+* **Lead Alerts** → Page 4
+* **Sequences** → Page 5
+* **Chat/Feedback** (drawer): Users can report bad AI drafts, request fixes, or add product feedback.
+* **Settings** (drawer): Edit ICP and import more data (re-opens Page 1 forms within a drawer).
+
+**Manager Toggle:**
+
+* Manager view reveals team KPIs and sequence performance comparison.
+
+---
+
+## Page 3 — Your Leads (List + Detail)
+
+**Purpose:** Daily SDR workspace.
+
+### A) List View
+
+* Default sort: **To‑Do first**, then next action time ascending.
+* Filters: Stage (To‑Do, In Sequence, Needs Follow‑Up, Meeting Booked, Paused), Owner, ICP band (≥60), Intent band (≥40).
+* Columns: Company, Contact, ICP, Intent, Stage, Next Action, Due.
+* Pagination/infinite scroll; keyboard shortcuts (J/K to move; Enter to open).
+
+### B) Lead Detail View
+
+**Header:** Lead name, company, title, ICP score, signal tags (Funding / Hiring / Site Visit), last activity.
+
+**Left Panel — Lead Info**
+
+* Company Brief (3–4 sentence AI summary drawn from allowed sources).
+* Contact Info (name, title, LinkedIn, email, phone).
+* Conversation Notes (editable; time-stamped additions).
+
+**Right Panel — Outreach Tasks (stacked cards)**
+
+1. **First Personalized Email**
+
+   * AI draft (editable). Actions: **Approve & Send**, **Edit & Save**, **Reject**.
+2. **Follow‑Up Email** (shows scheduled date)
+
+   * Same actions as above.
+3. **LinkedIn Task 1/2**
+
+   * Connection/message suggestions. Action: **Mark Completed**.
+4. **Call Script**
+
+   * 45‑sec script with 2 probing questions and a next step. Action: **Log Outcome**.
+
+**Chat Box (Bottom Right)**
+
+* Timeline thread combining: SDR messages, customer replies (pasted or synced), and system/AI suggestions.
+* Input: “Type customer reply or note…” + **Save**.
+* Behavior: After a customer reply is added, system proposes the next follow‑up and updates the next task automatically (e.g., defer for 90 days on “not now”).
+
+**Footer:** Progress bar (e.g., 2/5 steps). Quick Actions: **Add Note**, **Move to Nurture**, **Close Lead**.
+
+**Edge Cases:**
+
+* Rejected email drafts should prompt regeneration with a reason field.
+* If a bounce occurs, auto‑pause sequence for this lead and surface a warning.
+
+---
+
+## Page 4 — Lead Alerts (New Opportunities)
+
+**Purpose:** Feed SDRs a curated queue of ICP‑fit opportunities based on signals.
+
+**List View:**
+
+* Each row shows: Company, Reason (signal), Detected At, Recommended First Step.
+* Row actions: **Preview Outreach** (opens suggested first email/LI opener), **Import to Your Leads** (moves into Page 3 and assigns default sequence).
+
+**Details Drawer (on row click):**
+
+* “Why this company is here” explanation, supporting links, and editable hook suggestion.
+
+**Edge Cases:**
+
+* Prevent duplicate imports by checking existing leads; allow merge.
+
+---
+
+## Page 5 — Sequences (Configure Touchpoints)
+
+**Purpose:** Adjust how outreach flows.
+
+**List of Sequences:**
+
+* Name + mini KPIs (reply %, meetings, bounce %).
+
+**Editor:**
+
+* Vertical step list. Each step: channel (email / LinkedIn / call), wait days, template reference.
+* Drag to reorder; add/remove steps.
+* Template editor supports variables like {{company}}, {{first_name}}, {{signal_summary}}.
+* Assign sequence to lead groups or selected leads.
+
+**Edge Cases:**
+
+* Editing a live sequence asks whether to update future steps for already‑enrolled leads.
+
+---
+
+## Data Entities (conceptual)
+
+* **Company**: name, domain, industry, headcount band, geo, tech CRM, ICP score, intent score.
+* **Contact**: name, title, email, phone, LinkedIn, seniority, opted_out.
+* **Signal**: type (news/hiring/funding/site_intent), source, url, title, summary, sentiment, weight, detected_at.
+* **Research Note**: scope (company/contact), text.
+* **Sequence**: name, throttle_per_day, max_steps; **Sequence Step**: order, channel, wait_days, template.
+* **Template**: channel, body, variables.
+* **Lead Run**: contact, sequence, status, last_step, next_run_at, owner.
+* **Event**: type (open/reply/bounce/LI action/call/meeting/note), payload, created_at.
+* **Task**: channel, title, due_at, completed_at.
+* **Chat Message**: author (sdr/customer/system/ai), text, created_at.
+
+---
+
+## System Behaviors (abstract, no stack implied)
+
+* **Sequencer:** checks due tasks; schedules next steps based on sequence rules and customer replies.
+* **Email Sending:** requires explicit approval for the first email; follow-ups may auto‑schedule; bounces auto‑pause the lead.
+* **Signal Ingestion:** only use ~20 approved sources for news/hiring/intent; attach signals to companies and raise alerts.
+* **AI Generation:** create briefs, email drafts, LI openers, and call scripts; regenerate on reject with reason.
+* **Analytics Rollup:** compute KPIs for dashboard and per-sequence performance.
+
+---
+
+## Copy Templates (placeholders)
+
+* **Company Brief:** 3–4 sentences, include 1 dated news item + ICP fit reason.
+* **First Email:** 120–150 words; hook references top signal; 1 CTA; PS with asset.
+* **LI Opener:** 220 characters; reference news title/date; ask a short question.
+* **Call Script:** 45 seconds; opener + 2 questions + next step.
+
+---
+
+## Seed Data (for demo)
+
+* 10 companies with varied ICP (some strong, some weak).
+* 30 contacts (titles across sales/ops/marketing).
+* 20 alerts: funding announcements, hiring surges, repeat site visits.
+* 2 sequences (High‑Intent, Hiring Hook) with 4 steps each.
+* 50 tasks distributed across email/LI/calls.
+* Chat examples: customer “not now, Q4” → system suggests nurture in 90 days.
+
+---
+
+## Acceptance Criteria
+
+1. Completing **Setup** hides Page 1 and allows editing ICP only from Dashboard settings.
+2. **Dashboard** shows KPIs and today’s to‑dos and links to the correct leads.
+3. **Your Leads** list is paginated/smooth and opens a **detail view** with Info + Tasks + Chat.
+4. Approving an email logs an event, schedules a follow-up, and shows progress.
+5. Pasting a customer reply in Chat updates the next planned step according to simple rules.
+6. **Lead Alerts** lists opportunities with reasons; importing creates a lead and assigns the default sequence.
+7. **Sequences** can be created/edited; steps reorder; templates save variables; assignments work.
+8. The app remains usable and responsive with **500+ leads**.
+9. Basic accessibility and keyboard navigation are present on lists and forms.
+
+---
+
+**Instruction to Replit:**
+Build the above experience with any suitable implementation choices. Focus on clarity, speed, and reliability. Keep the code modular so providers (email, signals, AI) can be stubbed/mocked during MVP and swapped later without changing the UX.
