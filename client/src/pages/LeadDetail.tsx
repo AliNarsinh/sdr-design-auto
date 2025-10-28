@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
@@ -14,7 +16,9 @@ import {
   CheckCircle,
   Clock,
   Copy,
-  Send
+  Send,
+  MessageSquare,
+  Sparkles
 } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
@@ -97,6 +101,43 @@ export default function LeadDetail() {
   const [callScript, setCallScript] = useState(
     `**Opening (15 seconds)**\nHi ${lead.name.split(" ")[0]}, this is [Your Name] from SDR Copilot. Is now still a good time for our quick call?\n\n**Context Setting (30 seconds)**\nI know you're busy, so I'll keep this brief. I noticed ${lead.company} ${lead.signals[0]?.toLowerCase() || "has been growing rapidly"}, and you're likely focused on scaling your sales operations efficiently.\n\n**Value Proposition (45 seconds)**\nWe help ${lead.title}s like yourself automate personalized outreach while maintaining quality. Our clients typically see:\n• 3x increase in meeting conversion rates\n• 40% pipeline growth in the first quarter\n• 10+ hours saved per SDR per week\n\n**Discovery Questions**\n1. How is your team currently managing outbound outreach?\n2. What's your biggest challenge when it comes to personalizing at scale?\n3. How are you currently prioritizing which leads to contact first?\n\n**Transition to Demo**\nBased on what you've shared, I think a quick 15-minute demo would be valuable. I can show you exactly how [specific pain point] can be addressed. Would [Day/Time] or [Day/Time] work better for you?\n\n**Objection Handling**\n- "We're using [competitor]" → "That's great! Many of our clients started with [competitor]. What they found was... How's that working for you in terms of [pain point]?"\n- "Not interested" → "I understand. Can I ask - is it the timing, or is scaling personalized outreach not a priority right now?"\n- "Send me info" → "Happy to! To make sure I send the most relevant info, can I ask one quick question about [discovery question]?"\n\n**Closing**\nGreat talking with you, ${lead.name.split(" ")[0]}. I'll send over a calendar invite for [agreed time] and include a brief agenda. Looking forward to showing you how we can help ${lead.company} scale outreach efficiently!`
   );
+
+  const [emailSent, setEmailSent] = useState(false);
+  const [waitingForReply, setWaitingForReply] = useState(false);
+  const [receivedReply, setReceivedReply] = useState<boolean | null>(null);
+  const [prospectReply, setProspectReply] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [followUpSuggestion, setFollowUpSuggestion] = useState("");
+
+  const handleMarkCompleted = () => {
+    setEmailSent(true);
+    setWaitingForReply(true);
+  };
+
+  const handleReplyYes = () => {
+    setReceivedReply(true);
+    setWaitingForReply(false);
+  };
+
+  const handleReplyNo = () => {
+    setReceivedReply(false);
+    setWaitingForReply(false);
+    
+    const followUp = `Hi ${lead.name.split(" ")[0]},\n\nI wanted to follow up on my previous email about helping ${lead.company} scale personalized outreach.\n\nI know timing isn't always perfect, so I thought I'd share a quick resource that might be valuable: [Case study link showing 40% pipeline increase]\n\nIf you have 2 minutes this week, I'd love to hear your thoughts on your current outreach challenges. No pressure - just want to make sure this lands on your radar.\n\nWould a brief call next Tuesday or Wednesday work?\n\nBest,\nYour SDR Team`;
+    
+    setFollowUpSuggestion(followUp);
+  };
+
+  const handleGenerateResponse = () => {
+    const suggestion = `Hi ${lead.name.split(" ")[0]},\n\nThanks so much for getting back to me! I really appreciate you sharing that.\n\nBased on what you mentioned about ${prospectReply.toLowerCase().includes('busy') ? 'timing' : prospectReply.toLowerCase().includes('price') || prospectReply.toLowerCase().includes('cost') ? 'pricing' : 'your situation'}, I completely understand.\n\n${prospectReply.toLowerCase().includes('busy') ? 
+      `I know bandwidth is always tight. That's actually why a lot of our clients came to us - to free up their team's time. Would it help if I sent over a 2-minute video showing exactly how we've helped similar ${lead.title}s save 10+ hours per week?` : 
+      prospectReply.toLowerCase().includes('price') || prospectReply.toLowerCase().includes('cost') ?
+      `I totally get it - ROI is crucial. Let me share how we typically see payback in the first month: our clients average 3x more meetings booked, which for a team your size usually translates to 5-8 additional opportunities in the pipeline. Would a quick ROI breakdown specific to ${lead.company} be helpful?` :
+      `Let me share a quick case study that's relevant to your situation. Would next Tuesday or Wednesday work for a brief 15-minute call?`
+    }\n\nWhat do you think?\n\nBest,\nYour SDR Team`;
+    
+    setAiResponse(suggestion);
+  };
 
   const statusInfo = statusConfig[lead.status];
 
@@ -249,35 +290,204 @@ export default function LeadDetail() {
             </TabsList>
 
             <TabsContent value="email" className="space-y-4 mt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Email Draft</h3>
-                <div className="flex gap-2">
+              {!emailSent ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Email Draft</h3>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(emailDraft)}
+                        className="gap-2"
+                        data-testid="button-copy-email"
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="gap-2"
+                        data-testid="button-send-email"
+                      >
+                        <Send className="h-4 w-4" />
+                        Send Email
+                      </Button>
+                    </div>
+                  </div>
+                  <Textarea
+                    value={emailDraft}
+                    onChange={(e) => setEmailDraft(e.target.value)}
+                    className="min-h-[400px] font-mono text-sm"
+                    data-testid="textarea-email-draft"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      variant="default"
+                      onClick={handleMarkCompleted}
+                      className="gap-2"
+                      data-testid="button-mark-completed"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark as Completed
+                    </Button>
+                  </div>
+                </>
+              ) : waitingForReply ? (
+                <Card className="p-6">
+                  <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                      <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                        <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Email Sent Successfully!</h3>
+                      <p className="text-muted-foreground">
+                        Great job reaching out to {lead.name}
+                      </p>
+                    </div>
+                    <div className="pt-4 space-y-3">
+                      <Label className="text-base font-semibold">Did they reply?</Label>
+                      <div className="flex gap-3 justify-center">
+                        <Button
+                          variant="default"
+                          onClick={handleReplyYes}
+                          className="gap-2"
+                          data-testid="button-reply-yes"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Yes, They Replied
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleReplyNo}
+                          data-testid="button-reply-no"
+                        >
+                          No Reply Yet
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ) : receivedReply === true ? (
+                <div className="space-y-4">
+                  <Card className="p-4 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageSquare className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <h3 className="font-semibold text-green-900 dark:text-green-100">
+                        Great! They replied
+                      </h3>
+                    </div>
+                    <p className="text-sm text-green-800 dark:text-green-200">
+                      Let's help you craft the perfect response
+                    </p>
+                  </Card>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="prospect-reply">What did they say?</Label>
+                    <Textarea
+                      id="prospect-reply"
+                      placeholder="Paste their reply here..."
+                      value={prospectReply}
+                      onChange={(e) => setProspectReply(e.target.value)}
+                      className="min-h-[150px]"
+                      data-testid="textarea-prospect-reply"
+                    />
+                  </div>
+
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigator.clipboard.writeText(emailDraft)}
+                    onClick={handleGenerateResponse}
+                    disabled={!prospectReply.trim()}
                     className="gap-2"
-                    data-testid="button-copy-email"
+                    data-testid="button-generate-response"
                   >
-                    <Copy className="h-4 w-4" />
-                    Copy
+                    <Sparkles className="h-4 w-4" />
+                    Generate AI Response
                   </Button>
-                  <Button
-                    size="sm"
-                    className="gap-2"
-                    data-testid="button-send-email"
-                  >
-                    <Send className="h-4 w-4" />
-                    Send Email
-                  </Button>
+
+                  {aiResponse && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>AI-Generated Response</Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigator.clipboard.writeText(aiResponse)}
+                          className="gap-2"
+                          data-testid="button-copy-ai-response"
+                        >
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </Button>
+                      </div>
+                      <Textarea
+                        value={aiResponse}
+                        onChange={(e) => setAiResponse(e.target.value)}
+                        className="min-h-[300px] font-mono text-sm"
+                        data-testid="textarea-ai-response"
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
-              <Textarea
-                value={emailDraft}
-                onChange={(e) => setEmailDraft(e.target.value)}
-                className="min-h-[400px] font-mono text-sm"
-                data-testid="textarea-email-draft"
-              />
+              ) : receivedReply === false ? (
+                <div className="space-y-4">
+                  <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                        No problem! Let's create a follow-up
+                      </h3>
+                    </div>
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      Here's a suggested follow-up email to keep the conversation going
+                    </p>
+                  </Card>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Follow-Up Email</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(followUpSuggestion)}
+                        className="gap-2"
+                        data-testid="button-copy-followup"
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy
+                      </Button>
+                    </div>
+                    <Textarea
+                      value={followUpSuggestion}
+                      onChange={(e) => setFollowUpSuggestion(e.target.value)}
+                      className="min-h-[300px] font-mono text-sm"
+                      data-testid="textarea-followup"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      className="gap-2"
+                      data-testid="button-send-followup"
+                    >
+                      <Send className="h-4 w-4" />
+                      Send Follow-Up
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEmailSent(false);
+                        setWaitingForReply(false);
+                        setReceivedReply(null);
+                      }}
+                      data-testid="button-reset"
+                    >
+                      Start Over
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </TabsContent>
 
             <TabsContent value="linkedin" className="space-y-4 mt-4">
