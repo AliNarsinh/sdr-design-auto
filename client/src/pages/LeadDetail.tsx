@@ -326,51 +326,6 @@ export default function LeadDetail() {
           </Card>
         </div>
 
-        {activities.length > 0 && (
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <History className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Activity History</h2>
-            </div>
-            <div className="space-y-4" data-testid="activity-timeline">
-              {activities.map((activity, index) => {
-                const Icon = activityIcons[activity.type];
-                const colorClass = activityColors[activity.type];
-                
-                return (
-                  <div 
-                    key={activity.id} 
-                    className="flex gap-4"
-                    data-testid={`activity-${activity.id}`}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className={`h-10 w-10 rounded-full bg-muted flex items-center justify-center ${colorClass}`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      {index < activities.length - 1 && (
-                        <div className="w-0.5 h-full bg-border mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-6">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium">{activity.message}</p>
-                        <span className="text-xs text-muted-foreground">
-                          {formatTime(activity.timestamp)}
-                        </span>
-                      </div>
-                      {activity.details && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                          {activity.details}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
-
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Next Action Steps</h2>
           
@@ -651,6 +606,51 @@ export default function LeadDetail() {
             </TabsContent>
           </Tabs>
         </Card>
+
+        {activities.length > 0 && (
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Activity History</h2>
+            </div>
+            <div className="space-y-4" data-testid="activity-timeline">
+              {activities.map((activity, index) => {
+                const Icon = activityIcons[activity.type];
+                const colorClass = activityColors[activity.type];
+                
+                return (
+                  <div 
+                    key={activity.id} 
+                    className="flex gap-4"
+                    data-testid={`activity-${activity.id}`}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className={`h-10 w-10 rounded-full bg-muted flex items-center justify-center ${colorClass}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      {index < activities.length - 1 && (
+                        <div className="w-0.5 h-full bg-border mt-2" />
+                      )}
+                    </div>
+                    <div className="flex-1 pb-6">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium">{activity.message}</p>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(activity.timestamp)}
+                        </span>
+                      </div>
+                      {activity.details && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {activity.details}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
