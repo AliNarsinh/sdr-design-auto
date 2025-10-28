@@ -43,7 +43,7 @@ interface Lead {
 
 interface Activity {
   id: string;
-  type: "email_sent" | "reply_received" | "reply_none" | "followup_created" | "ai_response_generated";
+  type: "email_sent" | "reply_received" | "reply_none" | "followup_created" | "ai_response_generated" | "linkedin_sent" | "call_completed";
   message: string;
   timestamp: Date;
   details?: string;
@@ -99,6 +99,8 @@ const activityIcons = {
   reply_none: Clock,
   followup_created: Send,
   ai_response_generated: Sparkles,
+  linkedin_sent: Linkedin,
+  call_completed: Phone,
 };
 
 const activityColors = {
@@ -107,6 +109,8 @@ const activityColors = {
   reply_none: "text-yellow-500",
   followup_created: "text-purple-500",
   ai_response_generated: "text-pink-500",
+  linkedin_sent: "text-blue-600",
+  call_completed: "text-orange-500",
 };
 
 export default function LeadDetail() {
@@ -133,6 +137,8 @@ export default function LeadDetail() {
   const [prospectReply, setProspectReply] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [followUpSuggestion, setFollowUpSuggestion] = useState("");
+  const [linkedinSent, setLinkedinSent] = useState(false);
+  const [callCompleted, setCallCompleted] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
 
   const addActivity = (type: Activity["type"], message: string, details?: string) => {
@@ -178,6 +184,16 @@ export default function LeadDetail() {
     
     setAiResponse(suggestion);
     addActivity("ai_response_generated", "AI generated response based on prospect reply", suggestion);
+  };
+
+  const handleLinkedinCompleted = () => {
+    setLinkedinSent(true);
+    addActivity("linkedin_sent", "LinkedIn message sent", linkedinMessage);
+  };
+
+  const handleCallCompleted = () => {
+    setCallCompleted(true);
+    addActivity("call_completed", "Call completed", callScript);
   };
 
   const formatTime = (date: Date) => {
@@ -530,79 +546,121 @@ export default function LeadDetail() {
             </TabsContent>
 
             <TabsContent value="linkedin" className="space-y-4 mt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">LinkedIn Connection Message</h3>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigator.clipboard.writeText(linkedinMessage)}
-                    className="gap-2"
-                    data-testid="button-copy-linkedin"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="gap-2"
-                    data-testid="button-send-linkedin"
-                  >
-                    <Linkedin className="h-4 w-4" />
-                    Open LinkedIn
-                  </Button>
-                </div>
-              </div>
-              <Textarea
-                value={linkedinMessage}
-                onChange={(e) => setLinkedinMessage(e.target.value)}
-                className="min-h-[200px] font-mono text-sm"
-                data-testid="textarea-linkedin-message"
-              />
-              <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-900">
-                <p className="text-sm text-blue-900 dark:text-blue-100">
-                  <strong>Note:</strong> LinkedIn limits connection requests to 300 characters. 
-                  Consider sending a connection request first, then following up with a longer message once connected.
-                </p>
-              </Card>
+              {!linkedinSent ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">LinkedIn Connection Message</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(linkedinMessage)}
+                      className="gap-2"
+                      data-testid="button-copy-linkedin"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={linkedinMessage}
+                    onChange={(e) => setLinkedinMessage(e.target.value)}
+                    className="min-h-[200px] font-mono text-sm"
+                    data-testid="textarea-linkedin-message"
+                  />
+                  <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-900">
+                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                      <strong>Note:</strong> LinkedIn limits connection requests to 300 characters. 
+                      Consider sending a connection request first, then following up with a longer message once connected.
+                    </p>
+                  </Card>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="default"
+                      onClick={handleLinkedinCompleted}
+                      className="gap-2"
+                      data-testid="button-mark-linkedin-completed"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark as Completed
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <Card className="p-6">
+                  <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                      <div className="h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                        <CheckCircle className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">LinkedIn Message Sent!</h3>
+                      <p className="text-muted-foreground">
+                        Great job connecting with {lead.name} on LinkedIn
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="call" className="space-y-4 mt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Call Script</h3>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigator.clipboard.writeText(callScript)}
-                    className="gap-2"
-                    data-testid="button-copy-script"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="gap-2"
-                    data-testid="button-start-call"
-                  >
-                    <Phone className="h-4 w-4" />
-                    Start Call
-                  </Button>
-                </div>
-              </div>
-              <Textarea
-                value={callScript}
-                onChange={(e) => setCallScript(e.target.value)}
-                className="min-h-[500px] font-mono text-sm"
-                data-testid="textarea-call-script"
-              />
-              <Card className="p-4 bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-900">
-                <p className="text-sm text-purple-900 dark:text-purple-100">
-                  <strong>Tip:</strong> This script is personalized based on {lead.company}'s signals and recent activity. 
-                  Adapt as needed during the conversation to maintain authenticity.
-                </p>
-              </Card>
+              {!callCompleted ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Call Script</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(callScript)}
+                      className="gap-2"
+                      data-testid="button-copy-script"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={callScript}
+                    onChange={(e) => setCallScript(e.target.value)}
+                    className="min-h-[500px] font-mono text-sm"
+                    data-testid="textarea-call-script"
+                  />
+                  <Card className="p-4 bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-900">
+                    <p className="text-sm text-purple-900 dark:text-purple-100">
+                      <strong>Tip:</strong> This script is personalized based on {lead.company}'s signals and recent activity. 
+                      Adapt as needed during the conversation to maintain authenticity.
+                    </p>
+                  </Card>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="default"
+                      onClick={handleCallCompleted}
+                      className="gap-2"
+                      data-testid="button-mark-call-completed"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark as Completed
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <Card className="p-6">
+                  <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                      <div className="h-16 w-16 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                        <CheckCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Call Completed!</h3>
+                      <p className="text-muted-foreground">
+                        Great job connecting with {lead.name} via call
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </Card>
