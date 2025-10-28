@@ -19,7 +19,8 @@ import {
   Send,
   MessageSquare,
   Sparkles,
-  History
+  History,
+  TrendingUp
 } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { useState } from "react";
@@ -140,6 +141,50 @@ export default function LeadDetail() {
   const [linkedinSent, setLinkedinSent] = useState(false);
   const [callCompleted, setCallCompleted] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
+
+  // Calculate confidence scores based on lead signals and engagement
+  const calculateEmailConfidence = () => {
+    let score = 60; // Base score
+    if (lead.priority > 85) score += 15;
+    if (lead.signals.length >= 3) score += 10;
+    if (lead.status === "engaged") score += 10;
+    if (lead.email) score += 5;
+    return Math.min(score, 95);
+  };
+
+  const calculateLinkedinConfidence = () => {
+    let score = 55; // Base score
+    if (lead.priority > 85) score += 15;
+    if (lead.title.toLowerCase().includes("vp") || lead.title.toLowerCase().includes("director")) score += 10;
+    if (lead.linkedin) score += 10;
+    if (lead.signals.length >= 3) score += 10;
+    return Math.min(score, 95);
+  };
+
+  const calculateCallConfidence = () => {
+    let score = 50; // Base score (calls are harder)
+    if (lead.priority > 85) score += 20;
+    if (lead.status === "engaged") score += 15;
+    if (lead.phone) score += 10;
+    if (lead.signals.length >= 3) score += 5;
+    return Math.min(score, 95);
+  };
+
+  const emailConfidence = calculateEmailConfidence();
+  const linkedinConfidence = calculateLinkedinConfidence();
+  const callConfidence = calculateCallConfidence();
+
+  const getConfidenceColor = (score: number) => {
+    if (score >= 80) return "text-green-600 dark:text-green-400";
+    if (score >= 65) return "text-yellow-600 dark:text-yellow-400";
+    return "text-orange-600 dark:text-orange-400";
+  };
+
+  const getConfidenceBgColor = (score: number) => {
+    if (score >= 80) return "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-900";
+    if (score >= 65) return "bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-900";
+    return "bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-900";
+  };
 
   const addActivity = (type: Activity["type"], message: string, details?: string) => {
     const newActivity: Activity = {
@@ -364,6 +409,28 @@ export default function LeadDetail() {
             <TabsContent value="email" className="space-y-4 mt-4">
               {!emailSent ? (
                 <>
+                  <Card className={`p-4 ${getConfidenceBgColor(emailConfidence)}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className={`h-5 w-5 ${getConfidenceColor(emailConfidence)}`} />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Success Confidence</p>
+                          <p className={`text-2xl font-bold ${getConfidenceColor(emailConfidence)}`}>
+                            {emailConfidence}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground mb-1">Based on:</p>
+                        <p className="text-xs">
+                          {lead.priority > 85 && "High priority lead"}
+                          {lead.signals.length >= 3 && " • Strong signals"}
+                          {lead.status === "engaged" && " • Previous engagement"}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Email Draft</h3>
                     <Button
@@ -548,6 +615,28 @@ export default function LeadDetail() {
             <TabsContent value="linkedin" className="space-y-4 mt-4">
               {!linkedinSent ? (
                 <>
+                  <Card className={`p-4 ${getConfidenceBgColor(linkedinConfidence)}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className={`h-5 w-5 ${getConfidenceColor(linkedinConfidence)}`} />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Success Confidence</p>
+                          <p className={`text-2xl font-bold ${getConfidenceColor(linkedinConfidence)}`}>
+                            {linkedinConfidence}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground mb-1">Based on:</p>
+                        <p className="text-xs">
+                          {lead.priority > 85 && "High priority lead"}
+                          {(lead.title.toLowerCase().includes("vp") || lead.title.toLowerCase().includes("director")) && " • Senior role"}
+                          {lead.signals.length >= 3 && " • Strong signals"}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">LinkedIn Connection Message</h3>
                     <Button
@@ -607,6 +696,28 @@ export default function LeadDetail() {
             <TabsContent value="call" className="space-y-4 mt-4">
               {!callCompleted ? (
                 <>
+                  <Card className={`p-4 ${getConfidenceBgColor(callConfidence)}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className={`h-5 w-5 ${getConfidenceColor(callConfidence)}`} />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Success Confidence</p>
+                          <p className={`text-2xl font-bold ${getConfidenceColor(callConfidence)}`}>
+                            {callConfidence}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground mb-1">Based on:</p>
+                        <p className="text-xs">
+                          {lead.priority > 85 && "High priority lead"}
+                          {lead.status === "engaged" && " • Previous engagement"}
+                          {lead.signals.length >= 3 && " • Strong signals"}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Call Script</h3>
                     <Button
