@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Leads from "@/pages/Leads";
+import LeadDetail from "@/pages/LeadDetail";
 import Alerts from "@/pages/Alerts";
 import Sequences from "@/pages/Sequences";
 import Setup from "@/pages/Setup";
@@ -19,6 +20,7 @@ function Router() {
     <Switch>
       <Route path="/setup" component={Setup} />
       <Route path="/" component={Dashboard} />
+      <Route path="/leads/:id" component={LeadDetail} />
       <Route path="/leads" component={Leads} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/sequences" component={Sequences} />

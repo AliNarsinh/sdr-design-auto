@@ -10,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, X, ArrowUpDown, ChevronRight } from "lucide-react";
+import { Search, Filter, X, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 interface Lead {
   id: string;
@@ -144,10 +145,10 @@ const statusConfig = {
 };
 
 export default function Leads() {
+  const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState<"priority" | "progress">("priority");
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
   const filteredLeads = mockLeads
     .filter((lead) => {
@@ -255,7 +256,7 @@ export default function Leads() {
               <Card
                 key={lead.id}
                 className="p-5 hover-elevate cursor-pointer transition-all"
-                onClick={() => setSelectedLeadId(lead.id === selectedLeadId ? null : lead.id)}
+                onClick={() => setLocation(`/leads/${lead.id}`)}
                 data-testid={`lead-card-${lead.id}`}
               >
                 <div className="flex items-center gap-4">
@@ -284,12 +285,6 @@ export default function Leads() {
                         >
                           {statusInfo.label}
                         </Badge>
-
-                        <ChevronRight 
-                          className={`h-5 w-5 text-muted-foreground transition-transform ${
-                            selectedLeadId === lead.id ? 'rotate-90' : ''
-                          }`}
-                        />
                       </div>
                     </div>
 
@@ -309,32 +304,6 @@ export default function Leads() {
                     </div>
                   </div>
                 </div>
-
-                {selectedLeadId === lead.id && (
-                  <div className="mt-4 pt-4 border-t space-y-2">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Email:</span>{" "}
-                        <span className="font-medium">{lead.email}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Phone:</span>{" "}
-                        <span className="font-medium">{lead.phone}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button size="sm" variant="default" data-testid={`button-view-details-${lead.id}`}>
-                        View Full Details
-                      </Button>
-                      <Button size="sm" variant="outline" data-testid={`button-send-email-${lead.id}`}>
-                        Send Email
-                      </Button>
-                      <Button size="sm" variant="outline" data-testid={`button-schedule-call-${lead.id}`}>
-                        Schedule Call
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </Card>
             );
           })}
