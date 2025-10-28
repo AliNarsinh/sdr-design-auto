@@ -1,9 +1,8 @@
-import { LeadListItem } from "@/components/LeadListItem";
-import { LeadDetailPanel } from "@/components/LeadDetailPanel";
-import { TaskCard } from "@/components/TaskCard";
-import { ChatTimeline } from "@/components/ChatTimeline";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -11,141 +10,234 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, ArrowUpDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
-const mockLeads = [
+interface Lead {
+  id: string;
+  name: string;
+  company: string;
+  title: string;
+  status: "new" | "contacted" | "engaged" | "meeting-scheduled" | "converted" | "paused";
+  priority: number;
+  progress: number;
+  email: string;
+  phone: string;
+  lastActivity: string;
+  nextAction: string;
+}
+
+const mockLeads: Lead[] = [
   {
     id: "1",
+    name: "Sarah Johnson",
     company: "Acme Corp",
-    contact: "Sarah Johnson",
     title: "VP Sales",
+    status: "engaged",
+    priority: 95,
+    progress: 75,
     email: "sarah.johnson@acme.corp",
     phone: "+1 (555) 123-4567",
-    linkedin: "https://linkedin.com/in/sarahjohnson",
-    icpScore: 85,
-    intentScore: 72,
-    stage: "To-Do",
-    nextAction: "Approve email",
-    due: "Today 2:00 PM",
-    signals: [
-      { type: "funding", label: "Series B" },
-      { type: "hiring", label: "15 roles" },
-    ],
-    brief: "Acme Corp is a fast-growing B2B SaaS company that recently raised a $25M Series B led by Sequoia Capital (announced March 15, 2024). The company provides project management tools for distributed teams and is expanding rapidly into European markets.",
-    notes: "Initial call went well - Sarah mentioned they're currently using Salesforce but struggling with personalization at scale.",
+    lastActivity: "Replied to email",
+    nextAction: "Schedule demo call",
   },
   {
     id: "2",
-    company: "TechStart Inc",
-    contact: "Michael Chen",
-    title: "Head of Ops",
-    email: "m.chen@techstart.io",
-    phone: "+1 (555) 234-5678",
-    linkedin: "https://linkedin.com/in/michaelchen",
-    icpScore: 65,
-    intentScore: 45,
-    stage: "In Sequence",
-    nextAction: "Follow-up email",
-    due: "Tomorrow",
-    signals: [{ type: "site_visit", label: "5 visits" }],
-    brief: "TechStart is a mid-stage startup building developer tools. They've been visiting our pricing page repeatedly, indicating buying intent.",
-    notes: "Sent initial email 3 days ago. No response yet.",
-  },
-  {
-    id: "3",
+    name: "Emily Rodriguez",
     company: "DataFlow Systems",
-    contact: "Emily Rodriguez",
     title: "CTO",
+    status: "meeting-scheduled",
+    priority: 92,
+    progress: 85,
     email: "emily@dataflow.com",
     phone: "+1 (555) 345-6789",
-    linkedin: "https://linkedin.com/in/emilyrodriguez",
-    icpScore: 92,
-    intentScore: 88,
-    stage: "To-Do",
-    nextAction: "LinkedIn connect",
-    due: "Today 4:30 PM",
-    signals: [
-      { type: "funding", label: "Series C" },
-      { type: "hiring", label: "25 roles" },
-      { type: "site_visit", label: "12 visits" },
-    ],
-    brief: "DataFlow is a rapidly scaling data infrastructure company. Recently raised $50M Series C and is aggressively hiring across all departments.",
-    notes: "",
-  },
-];
-
-const chatMessages = [
-  {
-    id: "1",
-    author: "sdr" as const,
-    text: "Initial email sent with Series B congratulations hook",
-    timestamp: "2 days ago",
-  },
-  {
-    id: "2",
-    author: "system" as const,
-    text: "Email opened by recipient",
-    timestamp: "1 day ago",
+    lastActivity: "Meeting confirmed",
+    nextAction: "Prepare demo materials",
   },
   {
     id: "3",
-    author: "customer" as const,
-    text: "Thanks for reaching out. Interesting timing - we're actually evaluating sales tools right now. Can you send over some pricing info?",
-    timestamp: "18 hours ago",
+    name: "Michael Chen",
+    company: "TechStart Inc",
+    title: "Head of Ops",
+    status: "contacted",
+    priority: 78,
+    progress: 45,
+    email: "m.chen@techstart.io",
+    phone: "+1 (555) 234-5678",
+    lastActivity: "Email opened",
+    nextAction: "Send follow-up",
   },
   {
     id: "4",
-    author: "ai" as const,
-    text: "Suggested next step: Send pricing deck and propose demo for next week. High intent detected - prioritize this lead.",
-    timestamp: "18 hours ago",
+    name: "David Kim",
+    company: "CloudScale",
+    title: "Director of Sales",
+    status: "converted",
+    priority: 100,
+    progress: 100,
+    email: "david.kim@cloudscale.io",
+    phone: "+1 (555) 456-7890",
+    lastActivity: "Demo completed",
+    nextAction: "Follow up on proposal",
+  },
+  {
+    id: "5",
+    name: "Jennifer Martinez",
+    company: "Growth Analytics",
+    title: "VP Marketing",
+    status: "engaged",
+    priority: 85,
+    progress: 60,
+    email: "jen@growthanalytics.com",
+    phone: "+1 (555) 567-8901",
+    lastActivity: "Clicked pricing link",
+    nextAction: "Send pricing info",
+  },
+  {
+    id: "6",
+    name: "Robert Taylor",
+    company: "SalesTech Pro",
+    title: "CEO",
+    status: "new",
+    priority: 88,
+    progress: 15,
+    email: "robert@salestechpro.com",
+    phone: "+1 (555) 678-9012",
+    lastActivity: "Lead imported",
+    nextAction: "Send initial email",
+  },
+  {
+    id: "7",
+    name: "Lisa Anderson",
+    company: "RevOps Solutions",
+    title: "Head of Revenue",
+    status: "contacted",
+    priority: 72,
+    progress: 35,
+    email: "lisa@revopssolutions.com",
+    phone: "+1 (555) 789-0123",
+    lastActivity: "Email sent 2 days ago",
+    nextAction: "LinkedIn connection",
+  },
+  {
+    id: "8",
+    name: "James Wilson",
+    company: "Enterprise SaaS Co",
+    title: "VP of Sales Ops",
+    status: "paused",
+    priority: 65,
+    progress: 25,
+    email: "james@enterprisesaas.com",
+    phone: "+1 (555) 890-1234",
+    lastActivity: "Out of office auto-reply",
+    nextAction: "Resume in 2 weeks",
   },
 ];
 
-export default function Leads() {
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>("1");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [stageFilter, setStageFilter] = useState("all");
+const statusConfig = {
+  new: { label: "New", color: "bg-blue-500" },
+  contacted: { label: "Contacted", color: "bg-yellow-500" },
+  engaged: { label: "Engaged", color: "bg-purple-500" },
+  "meeting-scheduled": { label: "Meeting Scheduled", color: "bg-green-500" },
+  converted: { label: "Converted", color: "bg-emerald-600" },
+  paused: { label: "Paused", color: "bg-gray-400" },
+};
 
-  const selectedLead = mockLeads.find((lead) => lead.id === selectedLeadId);
+export default function Leads() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"priority" | "progress">("priority");
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+
+  const filteredLeads = mockLeads
+    .filter((lead) => {
+      const matchesSearch = 
+        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.title.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === "priority") {
+        return b.priority - a.priority;
+      } else {
+        return b.progress - a.progress;
+      }
+    });
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      <div className="w-96 border-r flex flex-col">
-        <div className="p-4 border-b space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search leads..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-              data-testid="input-search-leads"
-            />
+    <div className="h-full overflow-auto bg-background">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Leads</h1>
+            <p className="text-muted-foreground">
+              Manage and prioritize your sales opportunities
+            </p>
           </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={sortBy === "priority" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSortBy("priority")}
+              className="gap-1"
+              data-testid="button-sort-priority"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              Priority
+            </Button>
+            <Button
+              variant={sortBy === "progress" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSortBy("progress")}
+              className="gap-1"
+              data-testid="button-sort-progress"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              Progress
+            </Button>
+          </div>
+        </div>
 
-          <div className="flex gap-2">
-            <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="flex-1" data-testid="select-stage-filter">
+        <Card className="p-4">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search leads by name, company, or title..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-leads"
+              />
+            </div>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48" data-testid="select-status-filter">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Stage" />
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stages</SelectItem>
-                <SelectItem value="todo">To-Do</SelectItem>
-                <SelectItem value="in-sequence">In Sequence</SelectItem>
-                <SelectItem value="follow-up">Needs Follow-Up</SelectItem>
-                <SelectItem value="booked">Meeting Booked</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
+                <SelectItem value="engaged">Engaged</SelectItem>
+                <SelectItem value="meeting-scheduled">Meeting Scheduled</SelectItem>
+                <SelectItem value="converted">Converted</SelectItem>
                 <SelectItem value="paused">Paused</SelectItem>
               </SelectContent>
             </Select>
-            {(searchQuery || stageFilter !== "all") && (
+
+            {(searchQuery || statusFilter !== "all") && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => {
                   setSearchQuery("");
-                  setStageFilter("all");
+                  setStatusFilter("all");
                 }}
                 data-testid="button-clear-filters"
               >
@@ -153,73 +245,114 @@ export default function Leads() {
               </Button>
             )}
           </div>
+        </Card>
+
+        <div className="space-y-3">
+          {filteredLeads.map((lead) => {
+            const statusInfo = statusConfig[lead.status];
+            
+            return (
+              <Card
+                key={lead.id}
+                className="p-5 hover-elevate cursor-pointer transition-all"
+                onClick={() => setSelectedLeadId(lead.id === selectedLeadId ? null : lead.id)}
+                data-testid={`lead-card-${lead.id}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg truncate" data-testid={`lead-name-${lead.id}`}>
+                          {lead.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {lead.title} at {lead.company}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground mb-1">Priority</div>
+                          <div className="text-2xl font-semibold" data-testid={`lead-priority-${lead.id}`}>
+                            {lead.priority}
+                          </div>
+                        </div>
+
+                        <Badge 
+                          className={`${statusInfo.color} text-white border-0`}
+                          data-testid={`lead-status-${lead.id}`}
+                        >
+                          {statusInfo.label}
+                        </Badge>
+
+                        <ChevronRight 
+                          className={`h-5 w-5 text-muted-foreground transition-transform ${
+                            selectedLeadId === lead.id ? 'rotate-90' : ''
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Progress to Conversion</span>
+                        <span className="font-semibold" data-testid={`lead-progress-${lead.id}`}>
+                          {lead.progress}%
+                        </span>
+                      </div>
+                      <Progress value={lead.progress} className="h-2" />
+                      
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                        <span>Last: {lead.lastActivity}</span>
+                        <span>Next: {lead.nextAction}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedLeadId === lead.id && (
+                  <div className="mt-4 pt-4 border-t space-y-2">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Email:</span>{" "}
+                        <span className="font-medium">{lead.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Phone:</span>{" "}
+                        <span className="font-medium">{lead.phone}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" variant="default" data-testid={`button-view-details-${lead.id}`}>
+                        View Full Details
+                      </Button>
+                      <Button size="sm" variant="outline" data-testid={`button-send-email-${lead.id}`}>
+                        Send Email
+                      </Button>
+                      <Button size="sm" variant="outline" data-testid={`button-schedule-call-${lead.id}`}>
+                        Schedule Call
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
 
-        <div className="flex-1 overflow-auto">
-          {mockLeads.map((lead) => (
-            <LeadListItem
-              key={lead.id}
-              {...lead}
-              onClick={() => setSelectedLeadId(lead.id)}
-              isActive={selectedLeadId === lead.id}
-              testId={`lead-item-${lead.id}`}
-            />
-          ))}
-        </div>
+        {filteredLeads.length === 0 && (
+          <Card className="p-12">
+            <div className="text-center text-muted-foreground">
+              <p className="text-lg mb-2">No leads found</p>
+              <p className="text-sm">Try adjusting your search or filters</p>
+            </div>
+          </Card>
+        )}
 
-        <div className="p-4 border-t text-xs text-muted-foreground text-center">
-          Showing 1-3 of 127 leads
+        <div className="text-center text-sm text-muted-foreground">
+          Showing {filteredLeads.length} of {mockLeads.length} leads
         </div>
       </div>
-
-      {selectedLead && (
-        <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-3 gap-6 p-6">
-            <div className="col-span-1">
-              <LeadDetailPanel
-                company={selectedLead.company}
-                contact={selectedLead.contact}
-                title={selectedLead.title}
-                email={selectedLead.email}
-                phone={selectedLead.phone}
-                linkedin={selectedLead.linkedin}
-                icpScore={selectedLead.icpScore}
-                signals={selectedLead.signals}
-                companyBrief={selectedLead.brief}
-                notes={selectedLead.notes}
-                onUpdateNotes={(notes) => console.log("Notes updated:", notes)}
-                testId="lead-detail"
-              />
-            </div>
-
-            <div className="col-span-2 space-y-4">
-              <TaskCard
-                type="email"
-                title="First Personalized Email"
-                content={`Hi ${selectedLead.contact.split(" ")[0]},\n\nI noticed ${selectedLead.company} recently ${selectedLead.signals[0]?.label || "made headlines"} - congratulations! With your team expanding, I imagine managing sales operations across new markets is becoming increasingly complex.\n\nAt SDR Copilot, we help ${selectedLead.title}s like yourself streamline outreach and increase meeting conversion rates by 3x through AI-powered personalization.\n\nWould you be open to a quick 15-minute call next week to discuss how we can support ${selectedLead.company}'s growth?\n\nBest,\nJohn\n\nP.S. I've attached a case study showing how a similar SaaS company increased their pipeline by 40% in Q1.`}
-                onApprove={() => console.log("Email approved")}
-                onEdit={(content) => console.log("Email edited:", content)}
-                onReject={() => console.log("Email rejected")}
-                testId="task-email-1"
-              />
-
-              <TaskCard
-                type="linkedin"
-                title="LinkedIn Connection Request"
-                content={`Hi ${selectedLead.contact.split(" ")[0]} - saw your company's recent ${selectedLead.signals[0]?.label || "growth"}. Impressive! I help ${selectedLead.title}s scale outreach efficiently. Would love to connect and share some insights.`}
-                onComplete={() => console.log("LinkedIn task completed")}
-                testId="task-linkedin-1"
-              />
-
-              <ChatTimeline
-                messages={chatMessages}
-                onAddMessage={(text) => console.log("Message added:", text)}
-                testId="chat-timeline"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
